@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import fs from 'fs-extra';
-import kebabCase from 'lodash.kebabcase';
-import path from 'path';
-import admonitions from 'remark-admonitions';
-import {normalizeUrl, docuHash, aliasedSitePath} from '@docusaurus/utils';
+import fs from "fs-extra";
+import kebabCase from "lodash.kebabcase";
+import path from "path";
+import admonitions from "remark-admonitions";
+import { normalizeUrl, docuHash, aliasedSitePath } from "@docusaurus/utils";
 
 import {
   PluginOptions,
@@ -20,7 +20,7 @@ import {
   BlogPaginated,
   FeedType,
   BlogPost,
-} from './types';
+} from "./types";
 import {
   LoadContext,
   PluginContentLoadedActions,
@@ -28,19 +28,19 @@ import {
   Props,
   Plugin,
   HtmlTags,
-} from '@docusaurus/types';
-import {Configuration, Loader} from 'webpack';
-import {generateBlogFeed, generateBlogPosts} from './blogUtils';
+} from "@docusaurus/types";
+import { Configuration, Loader } from "webpack";
+import { generateBlogFeed, generateBlogPosts } from "./blogUtils";
 
 const DEFAULT_OPTIONS: PluginOptions = {
-  path: 'blog', // Path to data on filesystem, relative to site dir.
-  routeBasePath: 'blog', // URL Route.
-  include: ['*.md', '*.mdx'], // Extensions to include.
+  path: "blog", // Path to data on filesystem, relative to site dir.
+  routeBasePath: "blog", // URL Route.
+  include: ["*.md", "*.mdx"], // Extensions to include.
   postsPerPage: 10, // How many posts per page.
-  blogListComponent: '@theme/BlogListPage',
-  blogPostComponent: '@theme/BlogPostPage',
-  blogTagsListComponent: '@theme/BlogTagsListPage',
-  blogTagsPostsComponent: '@theme/BlogTagsPostsPage',
+  blogListComponent: "@theme/BlogListPage",
+  blogPostComponent: "@theme/BlogPostPage",
+  blogTagsListComponent: "@theme/BlogTagsListPage",
+  blogTagsPostsComponent: "@theme/BlogTagsPostsPage",
   showReadingTime: true,
   remarkPlugins: [],
   rehypePlugins: [],
@@ -50,19 +50,19 @@ const DEFAULT_OPTIONS: PluginOptions = {
 };
 
 function assertFeedTypes(val: any): asserts val is FeedType {
-  if (typeof val !== 'string' && !['rss', 'atom', 'all'].includes(val)) {
+  if (typeof val !== "string" && !["rss", "atom", "all"].includes(val)) {
     throw new Error(
-      `Invalid feedOptions type: ${val}. It must be either 'rss', 'atom', or 'all'`,
+      `Invalid feedOptions type: ${val}. It must be either 'rss', 'atom', or 'all'`
     );
   }
 }
 
 const getFeedTypes = (type?: FeedType) => {
   assertFeedTypes(type);
-  let feedTypes: ('rss' | 'atom')[] = [];
+  let feedTypes: ("rss" | "atom")[] = [];
 
-  if (type === 'all') {
-    feedTypes = ['rss', 'atom'];
+  if (type === "all") {
+    feedTypes = ["rss", "atom"];
   } else {
     feedTypes.push(type);
   }
@@ -71,9 +71,9 @@ const getFeedTypes = (type?: FeedType) => {
 
 export default function pluginContentBlog(
   context: LoadContext,
-  opts: Partial<PluginOptions>,
+  opts: Partial<PluginOptions>
 ): Plugin<BlogContent | null> {
-  const options: PluginOptions = {...DEFAULT_OPTIONS, ...opts};
+  const options: PluginOptions = { ...DEFAULT_OPTIONS, ...opts };
 
   if (options.admonitions) {
     options.remarkPlugins = options.remarkPlugins.concat([
@@ -81,19 +81,16 @@ export default function pluginContentBlog(
     ]);
   }
 
-  const {siteDir, generatedFilesDir} = context;
+  const { siteDir, generatedFilesDir } = context;
   const contentPath = path.resolve(siteDir, options.path);
-  const dataDir = path.join(
-    generatedFilesDir,
-    'docusaurus-plugin-content-blog',
-  );
+  const dataDir = path.join(generatedFilesDir, "docusaurus-plugin-gallery");
   let blogPosts: BlogPost[] = [];
 
   return {
-    name: 'docusaurus-plugin-content-blog',
+    name: "docusaurus-plugin-gallery",
 
     getPathsToWatch() {
-      const {include = []} = options;
+      const { include = [] } = options;
       const globPattern = include.map((pattern) => `${contentPath}/${pattern}`);
       return [...globPattern];
     },
@@ -102,7 +99,7 @@ export default function pluginContentBlog(
       const modules = [];
 
       if (options.admonitions) {
-        modules.push(require.resolve('remark-admonitions/styles/infima.css'));
+        modules.push(require.resolve("remark-admonitions/styles/infima.css"));
       }
 
       return modules;
@@ -110,7 +107,7 @@ export default function pluginContentBlog(
 
     // Fetches blog contents and returns metadata for the necessary routes.
     async loadContent() {
-      const {postsPerPage, routeBasePath} = options;
+      const { postsPerPage, routeBasePath } = options;
 
       blogPosts = await generateBlogPosts(contentPath, context, options);
       if (!blogPosts.length) {
@@ -142,7 +139,7 @@ export default function pluginContentBlog(
       const totalCount = blogPosts.length;
       const numberOfPages = Math.ceil(totalCount / postsPerPage);
       const {
-        siteConfig: {baseUrl = ''},
+        siteConfig: { baseUrl = "" },
       } = context;
       const basePageUrl = normalizeUrl([baseUrl, routeBasePath]);
 
@@ -175,9 +172,9 @@ export default function pluginContentBlog(
       }
 
       const blogTags: BlogTags = {};
-      const tagsPath = normalizeUrl([basePageUrl, 'tags']);
+      const tagsPath = normalizeUrl([basePageUrl, "tags"]);
       blogPosts.forEach((blogPost) => {
-        const {tags} = blogPost.metadata;
+        const { tags } = blogPost.metadata;
         if (!tags || tags.length === 0) {
           // TODO: Extract tags out into a separate plugin.
           // eslint-disable-next-line no-param-reassign
@@ -187,7 +184,7 @@ export default function pluginContentBlog(
 
         // eslint-disable-next-line no-param-reassign
         blogPost.metadata.tags = tags.map((tag) => {
-          if (typeof tag === 'string') {
+          if (typeof tag === "string") {
             const normalizedTag = kebabCase(tag);
             const permalink = normalizeUrl([tagsPath, normalizedTag]);
             if (!blogTags[normalizedTag]) {
@@ -242,7 +239,7 @@ export default function pluginContentBlog(
 
       const aliasedSource = (source: string) =>
         `~blog/${path.relative(dataDir, source)}`;
-      const {addRoute, createData} = actions;
+      const { addRoute, createData } = actions;
       const {
         blogPosts,
         blogListPaginated,
@@ -255,12 +252,12 @@ export default function pluginContentBlog(
       // Create routes for blog entries.
       await Promise.all(
         blogPosts.map(async (blogPost) => {
-          const {id, metadata} = blogPost;
+          const { id, metadata } = blogPost;
           await createData(
             // Note that this created data path must be in sync with
             // metadataPath provided to mdx-loader.
             `${docuHash(metadata.source)}.json`,
-            JSON.stringify(metadata, null, 2),
+            JSON.stringify(metadata, null, 2)
           );
 
           addRoute({
@@ -273,17 +270,17 @@ export default function pluginContentBlog(
           });
 
           blogItemsToMetadata[id] = metadata;
-        }),
+        })
       );
 
       // Create routes for blog's paginated list entries.
       await Promise.all(
         blogListPaginated.map(async (listPage) => {
-          const {metadata, items} = listPage;
-          const {permalink} = metadata;
+          const { metadata, items } = listPage;
+          const { permalink } = metadata;
           const pageMetadataPath = await createData(
             `${docuHash(permalink)}.json`,
-            JSON.stringify(metadata, null, 2),
+            JSON.stringify(metadata, null, 2)
           );
 
           addRoute({
@@ -307,7 +304,7 @@ export default function pluginContentBlog(
               metadata: aliasedSource(pageMetadataPath),
             },
           });
-        }),
+        })
       );
 
       // Tags.
@@ -319,7 +316,7 @@ export default function pluginContentBlog(
 
       await Promise.all(
         Object.keys(blogTags).map(async (tag) => {
-          const {name, items, permalink} = blogTags[tag];
+          const { name, items, permalink } = blogTags[tag];
 
           tagsModule[tag] = {
             allTagsPath: blogTagsListPath,
@@ -331,7 +328,7 @@ export default function pluginContentBlog(
 
           const tagsMetadataPath = await createData(
             `${docuHash(permalink)}.json`,
-            JSON.stringify(tagsModule[tag], null, 2),
+            JSON.stringify(tagsModule[tag], null, 2)
           );
 
           addRoute({
@@ -354,14 +351,14 @@ export default function pluginContentBlog(
               metadata: aliasedSource(tagsMetadataPath),
             },
           });
-        }),
+        })
       );
 
       // Only create /tags page if there are tags.
       if (Object.keys(blogTags).length > 0) {
         const tagsListPath = await createData(
           `${docuHash(`${blogTagsListPath}-tags`)}.json`,
-          JSON.stringify(tagsModule, null, 2),
+          JSON.stringify(tagsModule, null, 2)
         );
 
         addRoute({
@@ -378,13 +375,13 @@ export default function pluginContentBlog(
     configureWebpack(
       _config: Configuration,
       isServer: boolean,
-      {getBabelLoader, getCacheLoader}: ConfigureWebpackUtils,
+      { getBabelLoader, getCacheLoader }: ConfigureWebpackUtils
     ) {
-      const {rehypePlugins, remarkPlugins, truncateMarker} = options;
+      const { rehypePlugins, remarkPlugins, truncateMarker } = options;
       return {
         resolve: {
           alias: {
-            '~blog': dataDir,
+            "~blog": dataDir,
           },
         },
         module: {
@@ -396,7 +393,7 @@ export default function pluginContentBlog(
                 getCacheLoader(isServer),
                 getBabelLoader(isServer),
                 {
-                  loader: require.resolve('@docusaurus/mdx-loader'),
+                  loader: require.resolve("@docusaurus/mdx-loader"),
                   options: {
                     remarkPlugins,
                     rehypePlugins,
@@ -406,13 +403,13 @@ export default function pluginContentBlog(
                       const aliasedSource = aliasedSitePath(mdxPath, siteDir);
                       return path.join(
                         dataDir,
-                        `${docuHash(aliasedSource)}.json`,
+                        `${docuHash(aliasedSource)}.json`
                       );
                     },
                   },
                 },
                 {
-                  loader: path.resolve(__dirname, './markdownLoader.js'),
+                  loader: path.resolve(__dirname, "./markdownLoader.js"),
                   options: {
                     siteDir,
                     contentPath,
@@ -427,7 +424,7 @@ export default function pluginContentBlog(
       };
     },
 
-    async postBuild({outDir}: Props) {
+    async postBuild({ outDir }: Props) {
       if (!options.feedOptions) {
         return;
       }
@@ -445,15 +442,15 @@ export default function pluginContentBlog(
           const feedPath = path.join(
             outDir,
             options.routeBasePath,
-            `${feedType}.xml`,
+            `${feedType}.xml`
           );
-          const feedContent = feedType === 'rss' ? feed.rss2() : feed.atom1();
+          const feedContent = feedType === "rss" ? feed.rss2() : feed.atom1();
           try {
             fs.writeFileSync(feedPath, feedContent);
           } catch (err) {
             throw new Error(`Generating ${feedType} feed failed: ${err}`);
           }
-        }),
+        })
       );
     },
 
@@ -464,18 +461,18 @@ export default function pluginContentBlog(
 
       const feedTypes = getFeedTypes(options.feedOptions?.type);
       const {
-        siteConfig: {title},
+        siteConfig: { title },
         baseUrl,
       } = context;
       const feedsConfig = {
         rss: {
-          type: 'application/rss+xml',
-          path: 'rss.xml',
+          type: "application/rss+xml",
+          path: "rss.xml",
           title: `${title} Blog RSS Feed`,
         },
         atom: {
-          type: 'application/atom+xml',
-          path: 'atom.xml',
+          type: "application/atom+xml",
+          path: "atom.xml",
           title: `${title} Blog Atom Feed`,
         },
       };
@@ -488,12 +485,12 @@ export default function pluginContentBlog(
           return;
         }
 
-        const {type, path, title} = feedConfig;
+        const { type, path, title } = feedConfig;
 
         headTags.push({
-          tagName: 'link',
+          tagName: "link",
           attributes: {
-            rel: 'alternate',
+            rel: "alternate",
             type,
             href: normalizeUrl([baseUrl, options.routeBasePath, path]),
             title,
