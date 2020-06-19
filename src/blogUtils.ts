@@ -159,8 +159,7 @@ export async function generateBlogPosts(
           editUrl: editBlogUrl,
           source: aliasedSource,
           description: frontMatter.description || excerpt,
-          date: "",
-          postDate: date,
+          date,
           tags: frontMatter.tags,
           title: frontMatter.title,
           readingTime: showReadingTime
@@ -173,7 +172,7 @@ export async function generateBlogPosts(
   );
 
   blogPosts.sort(
-    (a, b) => b.metadata.postDate.getTime() - a.metadata.postDate.getTime()
+    (a, b) => b.metadata.date.getTime() - a.metadata.date.getTime()
   );
 
   return blogPosts;
